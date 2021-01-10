@@ -32,6 +32,8 @@ const corsOptions = {
 
 app.use(cors(corsOptions));
 
+const { check } = require('express-validator');
+
 app.get('/', (req, res) => {
   res.send('Welcome to ticketing backend!');
 });
@@ -40,6 +42,7 @@ app.get('/', (req, res) => {
 
 app.post('/submit-form', (req, res) => {
   const { contact_reason, message } = req.body;
+  console.log('body', req.body);
   connection.query(
     'INSERT INTO ticket(contact_reason, message) VALUES (?, ?)',
     [contact_reason, message],
@@ -48,7 +51,6 @@ app.post('/submit-form', (req, res) => {
         console.log(err);
         res.status(500).send('An error occurred to display ticket');
       } else {
-        console.log(results);
         res.status(200).json(results);
       }
     }
@@ -64,7 +66,7 @@ app.get('/get-alltickets', (req, res) => {
       console.log(err);
       res.status(500).send('An error occurred to display all tickets');
     } else {
-      console.log(results);
+      console.log('results', results);
       res.status(200).json(results);
     }
   });
