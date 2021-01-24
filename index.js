@@ -12,8 +12,6 @@ app.use(
   })
 );
 
-// enable CORS
-
 const allowedOrigins = [
   'http://localhost:3000',
   'http://localhost:3001',
@@ -33,6 +31,7 @@ const corsOptions = {
 app.use(cors(corsOptions));
 
 const { check } = require('express-validator');
+const { connect } = require('./db');
 
 app.get('/', (req, res) => {
   res.send('Welcome to ticketing backend!');
@@ -71,6 +70,58 @@ app.get('/get-alltickets', (req, res) => {
     }
   });
 });
+
+// get all users
+app.get('/users', (req, res) => {
+  const users = req.body;
+  connection.query('SELECT * FROM users', [users], (err, results) => {
+    if (err) {
+      console.log(err);
+      res.status(500).send('An error occurred to display all users');
+    } else {
+      console.log('results', results);
+      res.status(200).json(results);
+    }
+  });
+});
+
+// get one user
+app.get('/users/:id', (req, res) => {
+  const userId = req.params.id;
+  connection.query(
+    'SELECT * FROM users WHERE id = ?',
+    [userId],
+    (err, results) => {
+      if (err) {
+        console.log(err);
+        res.status(500).send('An error occurred to display the selected user');
+      } else {
+        console.log('results', results);
+        res.status(200).json(results);
+      }
+    }
+  );
+});
+
+//add a user
+
+app.post('/users', (req, res) => {
+  const { username, role, email, password } = req.body;
+  connection.query(
+    'INSERT INTO users (username, role, email, password) VALUES (?, ?, ?, ?)',
+    [username, role, email, password],
+    (err, results) => {
+      if (err) {
+        console.log(err);
+        res.status(500).send('An error occurred to add a new user');
+      } else {
+        res.status(200).json(results);
+      }
+    }
+  );
+});
+
+// app.post('/api/auth/signup')
 
 app.listen(port, (err) => {
   if (err) {
