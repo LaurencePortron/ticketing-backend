@@ -1,5 +1,6 @@
 const express = require('express');
 const connection = require('./db');
+var session = require('express-session');
 
 const port = 5000;
 const app = express();
@@ -29,9 +30,13 @@ const corsOptions = {
 };
 
 app.use(cors(corsOptions));
-
-const { check } = require('express-validator');
-const { connect } = require('./db');
+app.use(
+  session({
+    secret: 'secret',
+    resave: true,
+    saveUninitialized: true,
+  })
+);
 
 app.get('/', (req, res) => {
   res.send('Welcome to ticketing backend!');
@@ -103,8 +108,30 @@ app.get('/users/:id', (req, res) => {
   );
 });
 
-//add a user
+// delete one user
+app.delete('/users/:id', (req, res) => {
+  const userId = req.params.id;
+  connection.query(
+    'DELETE FROM users WHERE id = ?',
+    [userId],
+    (err, results) => {
+      if (err) {
+        console.log(err);
+        res.status(500).send('An error occurred to delete this user');
+      } else {
+        console.log('results', results);
+        res.status(200).json(results);
+      }
+    }
+  );
+});
 
+//
+app.get('/', function (req, res) {
+  res.sendFile(path.join(__dirname + '/LogIn.js'));
+});
+
+//add a user
 app.post('/users', (req, res) => {
   const { username, role, email, password } = req.body;
   connection.query(
@@ -121,7 +148,40 @@ app.post('/users', (req, res) => {
   );
 });
 
-// app.post('/api/auth/signup')
+// check for existing user in DB
+app.post('/login', (req, res) => {
+  const username = req.body.username;
+  const password = req.body.password;
+  if (username && password) {
+    connection.query(
+      'SELECT * FROM users WHERE username = ? AND password = ?',
+      [username, password],
+      (err, results) => {
+        if (results.length > 0) {
+          req.session.loggedin = true;
+          req.session.username = username;
+        } else {
+          res.status(401);
+          res.send('Incorrect username or password');
+        }
+        res.end();
+      }
+    );
+  } else {
+    res.send('Please enter username and password');
+    res.end();
+  }
+});
+
+// if details are correct the user will be redirected to the dashboard
+app.get('/dashboard', (req, res) => {
+  if (req.session.loggedin) {
+    res.send('Welcome back, ' + req.session.username + '!');
+  } else {
+    res.send('Please login to view this page!');
+  }
+  res.end();
+});
 
 app.listen(port, (err) => {
   if (err) {
