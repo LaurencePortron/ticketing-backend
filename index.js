@@ -6,6 +6,7 @@ const port = 5000;
 const app = express();
 const cors = require('cors');
 
+app.set('trust proxy', 1);
 app.use(express.json());
 app.use(
   express.urlencoded({
@@ -18,23 +19,25 @@ const allowedOrigins = [
   'http://localhost:3001',
   'http://localhost:5000',
 ];
-const corsOptions = {
-  origin: (origin, callback) => {
-    if (origin === undefined || allowedOrigins.indexOf(origin) !== -1) {
-      callback(null, true);
-    } else {
-      callback(new Error('Not allowed by CORS'));
-    }
-  },
-  credentials: true,
-};
 
-app.use(cors(corsOptions));
+app.use(
+  cors({
+    origin: (origin, callback) => {
+      if (origin === undefined || allowedOrigins.indexOf(origin) !== -1) {
+        callback(null, true);
+      } else {
+        callback(new Error('Not allowed by CORS'));
+      }
+    },
+    credentials: true,
+  })
+);
 app.use(
   session({
     secret: 'secret',
     resave: true,
     saveUninitialized: true,
+    cookie: { httpOnly: false, secure: false, maxAge: null },
   })
 );
 
@@ -46,7 +49,6 @@ app.get('/', (req, res) => {
 
 app.post('/submit-form', (req, res) => {
   const { contact_reason, message } = req.body;
-  console.log('body', req.body);
   connection.query(
     'INSERT INTO ticket(contact_reason, message) VALUES (?, ?)',
     [contact_reason, message],
@@ -70,7 +72,6 @@ app.get('/get-alltickets', (req, res) => {
       console.log(err);
       res.status(500).send('An error occurred to display all tickets');
     } else {
-      console.log('results', results);
       res.status(200).json(results);
     }
   });
@@ -116,10 +117,8 @@ app.delete('/users/:id', (req, res) => {
     [userId],
     (err, results) => {
       if (err) {
-        console.log(err);
         res.status(500).send('An error occurred to delete this user');
       } else {
-        console.log('results', results);
         res.status(200).json(results);
       }
     }
@@ -181,6 +180,25 @@ app.get('/dashboard', (req, res) => {
     res.send('Please login to view this page!');
   }
   res.end();
+});
+
+// current logged in user
+
+app.get('/logged-user', (req, res) => {
+  const username = req.session.username;
+  connection.query(
+    'SELECT * FROM users WHERE username = ?',
+    [username],
+    (err, results) => {
+      if (err) {
+        console.log(err);
+        res.status(500).send('An error occurred to display the selected user');
+      } else {
+        console.log('results', results);
+        res.status(200).json(results);
+      }
+    }
+  );
 });
 
 app.listen(port, (err) => {
