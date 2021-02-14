@@ -77,6 +77,67 @@ app.get('/get-alltickets', (req, res) => {
   });
 });
 
+// get one ticket
+app.get('/ticket/:id', (req, res) => {
+  const ticketId = req.params.id;
+  connection.query(
+    'SELECT * FROM ticket WHERE id = ?',
+    [ticketId],
+    (err, results) => {
+      if (err) {
+        console.log(err);
+        res
+          .status(500)
+          .send('An error occurred to display the selected ticket');
+      } else {
+        console.log('results', results);
+        res.status(200).json(results);
+      }
+    }
+  );
+});
+
+// modify assignee id of ticket
+app.put('/ticket/:id/', (req, res) => {
+  const newAssignee = req.body;
+  const ticketId = req.params.id;
+  connection.query(
+    'UPDATE ticket SET ? WHERE id = ?',
+    [newAssignee, ticketId],
+    (err, results) => {
+      if (err) {
+        console.log(err);
+        res.status(500).send('An error occurred to change the new assignee');
+      } else {
+        res.status(200).json(results);
+      }
+    }
+  );
+});
+
+// check assignee of one ticket
+app.get('/ticket/:assignee_id/assignee', (req, res) => {
+  const assigneeId = req.params.assignee_id;
+  connection.query(
+    'SELECT * FROM ticket WHERE assignee_id = ?',
+
+    [assigneeId],
+    (err, results) => {
+      if (err) {
+        console.log(err);
+        res
+          .status(500)
+          .send(
+            'An error occurred to display the selected ticket and assignee'
+          );
+      } else {
+        console.log('results', results);
+        res.status(200).json(results);
+      }
+    }
+  );
+});
+
 // get all users
 app.get('/users', (req, res) => {
   const users = req.body;
