@@ -65,7 +65,7 @@ app.post('/submit-form', (req, res) => {
 
 //display alltickets
 
-app.get('/get-alltickets', (req, res) => {
+app.get('/tickets', (req, res) => {
   const allTickets = req.body;
   connection.query('SELECT * FROM ticket', [allTickets], (err, results) => {
     if (err) {
