@@ -154,7 +154,28 @@ app.get('/tickets/pending', (req, res) => {
   );
 });
 
-// modify assignee id of ticket
+//change status of ticket
+
+app.put('/ticket/:id/status', (req, res) => {
+  const ticketStatus = req.body;
+  const ticketId = req.params.id;
+  connection.query(
+    'UPDATE ticket SET ? WHERE id = ?',
+    [ticketStatus, ticketId],
+    (err, results) => {
+      if (err) {
+        console.log(err);
+        res
+          .status(500)
+          .send('An error occurred to change the status of this ticket');
+      } else {
+        res.status(200).json(results);
+      }
+    }
+  );
+});
+
+// change assignee id of ticket
 app.put('/ticket/:id/', (req, res) => {
   const newAssignee = req.body;
   const ticketId = req.params.id;
