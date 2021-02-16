@@ -97,6 +97,63 @@ app.get('/ticket/:id', (req, res) => {
   );
 });
 
+//get tickets by closed status
+
+app.get('/tickets/closed', (req, res) => {
+  const ticketStatus = req.params.status;
+  connection.query(
+    `SELECT * FROM ticket WHERE status LIKE '%closed%'`,
+    [ticketStatus],
+    (err, results) => {
+      if (err) {
+        console.log(err);
+        res.status(500).send('An error occurred to display the closed tickets');
+      } else {
+        console.log('results', results);
+        res.status(200).json(results);
+      }
+    }
+  );
+});
+
+// get tickets by open status
+
+app.get('/tickets/open', (req, res) => {
+  const ticketStatus = req.params.status;
+  connection.query(
+    `SELECT * FROM ticket WHERE status LIKE '%open%'`,
+    [ticketStatus],
+    (err, results) => {
+      if (err) {
+        console.log(err);
+        res.status(500).send('An error occurred to display the closed tickets');
+      } else {
+        console.log('results', results);
+        res.status(200).json(results);
+      }
+    }
+  );
+});
+
+// get tickets by pending status
+
+app.get('/tickets/pending', (req, res) => {
+  const ticketStatus = req.params.status;
+  connection.query(
+    `SELECT * FROM ticket WHERE status LIKE '%pending%'`,
+    [ticketStatus],
+    (err, results) => {
+      if (err) {
+        console.log(err);
+        res.status(500).send('An error occurred to display the closed tickets');
+      } else {
+        console.log('results', results);
+        res.status(200).json(results);
+      }
+    }
+  );
+});
+
 // modify assignee id of ticket
 app.put('/ticket/:id/', (req, res) => {
   const newAssignee = req.body;
