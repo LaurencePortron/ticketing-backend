@@ -32,6 +32,7 @@ app.use(
     credentials: true,
   })
 );
+
 app.use(
   session({
     secret: 'secret',
@@ -45,22 +46,84 @@ app.get('/', (req, res) => {
   res.send('Welcome to ticketing backend!');
 });
 
-// post data to ticket table
+//submit a ticket
+//select all emails from customers table and compare, if match then add id if not
+// if customer_email === email from table customers then take id of that customer and let it be customer_id in ticket table
 
 app.post('/submit-form', (req, res) => {
-  const { contact_reason, message } = req.body;
+  const {
+    contact_reason,
+    message,
+    status,
+    customer_id,
+    customer_email,
+  } = req.body;
   connection.query(
-    'INSERT INTO ticket(contact_reason, message) VALUES (?, ?)',
-    [contact_reason, message],
+    'INSERT INTO ticket(contact_reason, message, status, customer_id, customer_email) VALUES (?, ?, ?, ?, ?)',
+    [contact_reason, message, status, customer_id, customer_email],
     (err, results) => {
       if (err) {
         console.log(err);
-        res.status(500).send('An error occurred to display ticket');
+        // res.status(500).send('An error occurred to post ticket');
+      } else {
+        // res.status(200).json(results);
+        console.log('ticket posted');
+      }
+    }
+  );
+});
+
+//get all customers
+
+app.get('/customers', (req, res) => {
+  const allCustomers = req.body;
+  connection.query(
+    'SELECT * FROM customers',
+    [allCustomers],
+    (err, results) => {
+      if (err) {
+        console.log(err);
+        res.status(500).send('An error occurred to display all customers');
       } else {
         res.status(200).json(results);
       }
     }
   );
+});
+
+// add a customer
+
+app.post('/customers', (req, res) => {
+  const { firstname, lastname, email } = req.body;
+  if (email) {
+    connection.query(
+      'SELECT * FROM customers WHERE email = ?',
+      [email],
+      (err, results) => {
+        if (results.length > 0) {
+          console.log('customer exists');
+        } else {
+          connection.query(
+            'INSERT INTO customers (firstname, lastname, email) VALUES (?, ?, ?)',
+
+            [firstname, lastname, email],
+            (err, results) => {
+              if (err) {
+                console.log(err);
+                // res.status(500).send('An error occurred to post ticket');
+              } else {
+                // res.status(200).json(results);
+                console.log('ticket posted');
+              }
+            }
+          );
+        }
+      }
+    );
+  } else {
+    res.send('Please enter username and password');
+    res.end();
+  }
 });
 
 //display alltickets
