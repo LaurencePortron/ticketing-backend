@@ -51,16 +51,11 @@ app.get('/', (req, res) => {
 // if customer_email === email from table customers then take id of that customer and let it be customer_id in ticket table
 
 app.post('/submit-form', (req, res) => {
-  const {
-    contact_reason,
-    message,
-    status,
-    customer_id,
-    customer_email,
-  } = req.body;
+  const { contact_reason, message, status, customer_email } = req.body;
+
   connection.query(
-    'INSERT INTO ticket(contact_reason, message, status, customer_id, customer_email) VALUES (?, ?, ?, ?, ?)',
-    [contact_reason, message, status, customer_id, customer_email],
+    'INSERT INTO ticket(contact_reason, message, status, customer_email) VALUES (?, ?, ?, ?)',
+    [contact_reason, message, status, customer_email],
     (err, results) => {
       if (err) {
         console.log(err);
@@ -68,6 +63,22 @@ app.post('/submit-form', (req, res) => {
       } else {
         // res.status(200).json(results);
         console.log('ticket posted');
+      }
+    }
+  );
+  const addCustomer = req.body;
+  const ticketCustomerId = req.params.customer_id;
+  const ticketId = req.params.id;
+  connection.query(
+    'UPDATE ticket t INNER JOIN customers c ON t.customer_email = c.email SET t.customer_id = c.id',
+    [addCustomer, ticketCustomerId, ticketId],
+    (err, results) => {
+      if (err) {
+        console.log(err);
+        res.status(500).send('An error occurred to add the customer id');
+      } else {
+        console.log('id successfully added to ticket');
+        res.status(200).json(results);
       }
     }
   );
@@ -91,7 +102,7 @@ app.get('/customers', (req, res) => {
   );
 });
 
-// add a customer
+// add a customer and check if they are in db
 
 app.post('/customers', (req, res) => {
   const { firstname, lastname, email } = req.body;
@@ -105,7 +116,6 @@ app.post('/customers', (req, res) => {
         } else {
           connection.query(
             'INSERT INTO customers (firstname, lastname, email) VALUES (?, ?, ?)',
-
             [firstname, lastname, email],
             (err, results) => {
               if (err) {
@@ -121,9 +131,32 @@ app.post('/customers', (req, res) => {
       }
     );
   } else {
-    res.send('Please enter username and password');
+    res.send('gets created');
     res.end();
   }
+});
+
+// get ticket id where tickets have a customer_id
+
+app.get('/customer-tickets', (req, res) => {
+  const ticketId = req.params.id;
+  const customerEmail = req.body.customer_email;
+  connection.query(
+    'SELECT * FROM ticket INNER JOIN customers',
+    [ticketId, customerEmail],
+    (err, results) => {
+      if (err) {
+        console.log(err);
+        res
+          .status(500)
+          .send(
+            'An error occurred to display all tickets with associated customer'
+          );
+      } else {
+        res.status(200).json(results);
+      }
+    }
+  );
 });
 
 //display alltickets
