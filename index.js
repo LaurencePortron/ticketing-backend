@@ -262,6 +262,22 @@ app.get('/tickets/pending', (req, res) => {
   );
 });
 
+// get tickets by unassigned status
+
+app.get('/tickets/unassigned', (req, res) => {
+  connection.query(
+    `SELECT * FROM ticket WHERE assignee_id IS NULL`,
+    (err, results) => {
+      if (err) {
+        console.log(err);
+        res.status(500).send('An error occurred to display unassigned tickets');
+      } else {
+        res.status(200).json(results);
+      }
+    }
+  );
+});
+
 //change status of ticket
 
 app.put('/ticket/:id/status', (req, res) => {
