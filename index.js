@@ -46,10 +46,6 @@ app.get('/', (req, res) => {
   res.send('Welcome to ticketing backend!');
 });
 
-//submit a ticket
-//select all emails from customers table and compare, if match then add id if not
-// if customer_email === email from table customers then take id of that customer and let it be customer_id in ticket table
-
 app.post('/submit-form', (req, res) => {
   const { contact_reason, message, status, customer_email } = req.body;
 
@@ -59,26 +55,26 @@ app.post('/submit-form', (req, res) => {
     (err, results) => {
       if (err) {
         console.log(err);
-        // res.status(500).send('An error occurred to post ticket');
+        res.status(500).send('An error occurred to post ticket');
       } else {
-        // res.status(200).json(results);
         console.log('ticket posted');
-      }
-    }
-  );
-  const addCustomer = req.body;
-  const ticketCustomerId = req.params.customer_id;
-  const ticketId = req.params.id;
-  connection.query(
-    'UPDATE ticket t INNER JOIN customers c ON t.customer_email = c.email SET t.customer_id = c.id',
-    [addCustomer, ticketCustomerId, ticketId],
-    (err, results) => {
-      if (err) {
-        console.log(err);
-        res.status(500).send('An error occurred to add the customer id');
-      } else {
-        console.log('id successfully added to ticket');
-        res.status(200).json(results);
+
+        const addCustomer = req.body;
+        const ticketCustomerId = req.params.customer_id;
+        const ticketId = req.params.id;
+        connection.query(
+          'UPDATE ticket t INNER JOIN customers c ON t.customer_email = c.email SET t.customer_id = c.id',
+          [addCustomer, ticketCustomerId, ticketId],
+          (err, results) => {
+            if (err) {
+              console.log(err);
+              res.status(500).send('An error occurred to add the customer id');
+            } else {
+              console.log('id successfully added to ticket');
+              res.status(200).json(results);
+            }
+          }
+        );
       }
     }
   );
@@ -95,6 +91,22 @@ app.get('/customers', (req, res) => {
       if (err) {
         console.log(err);
         res.status(500).send('An error occurred to display all customers');
+      } else {
+        res.status(200).json(results);
+      }
+    }
+  );
+});
+
+app.get('/customers/:id', (req, res) => {
+  const customerId = req.params.id;
+  connection.query(
+    'SELECT * FROM customers WHERE id = ?',
+    [customerId],
+    (err, results) => {
+      if (err) {
+        console.log(err);
+        res.status(500).send('An error occurred to display this customer');
       } else {
         res.status(200).json(results);
       }
@@ -136,29 +148,6 @@ app.post('/customers', (req, res) => {
   }
 });
 
-// get ticket id where tickets have a customer_id
-
-app.get('/customer-tickets', (req, res) => {
-  const ticketId = req.params.id;
-  const customerEmail = req.body.customer_email;
-  connection.query(
-    'SELECT * FROM ticket INNER JOIN customers',
-    [ticketId, customerEmail],
-    (err, results) => {
-      if (err) {
-        console.log(err);
-        res
-          .status(500)
-          .send(
-            'An error occurred to display all tickets with associated customer'
-          );
-      } else {
-        res.status(200).json(results);
-      }
-    }
-  );
-});
-
 //display alltickets
 
 app.get('/tickets', (req, res) => {
@@ -173,12 +162,14 @@ app.get('/tickets', (req, res) => {
   });
 });
 
-// get one ticket
-app.get('/ticket/:id', (req, res) => {
+// get one ticket with customer id
+app.get('/ticket/:id/:customer_id', (req, res) => {
   const ticketId = req.params.id;
+  const customerId = req.params.customer_id;
+
   connection.query(
-    'SELECT * FROM ticket WHERE id = ?',
-    [ticketId],
+    'SELECT * FROM ticket WHERE id = ? AND customer_id=?',
+    [ticketId, customerId],
     (err, results) => {
       if (err) {
         console.log(err);
