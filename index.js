@@ -184,6 +184,27 @@ app.get('/ticket/:id/:customer_id', (req, res) => {
   );
 });
 
+// get all tickets with the same customer id
+
+app.get('/ticket/:customer_id', (req, res) => {
+  const customerId = req.params.customer_id;
+  connection.query(
+    'SELECT * FROM ticket WHERE customer_id = ?',
+    [customerId],
+    (err, results) => {
+      if (err) {
+        console.log(err);
+        res
+          .status(500)
+          .send('An error occurred to display the selected ticket');
+      } else {
+        console.log('results', results);
+        res.status(200).json(results);
+      }
+    }
+  );
+});
+
 //get tickets by closed status
 
 app.get('/tickets/closed', (req, res) => {
