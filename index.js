@@ -58,7 +58,6 @@ app.post('/submit-form', (req, res) => {
         res.status(500).send('An error occurred to post ticket');
       } else {
         console.log('ticket posted');
-
         const addCustomer = req.body;
         const ticketCustomerId = req.params.customer_id;
         const ticketId = req.params.id;
@@ -317,8 +316,8 @@ app.put('/ticket/:id/', (req, res) => {
   );
 });
 
-// check assignee of one ticket
-app.get('/ticket/:assignee_id/assignee', (req, res) => {
+// check tickets of assignee
+app.get('/tickets/:assignee_id/assignee', (req, res) => {
   const assigneeId = req.params.assignee_id;
   connection.query(
     'SELECT * FROM ticket WHERE assignee_id = ?',
@@ -458,6 +457,43 @@ app.get('/logged-user', (req, res) => {
         res.status(500).send('An error occurred to display the selected user');
       } else {
         console.log('results', results);
+        res.status(200).json(results);
+      }
+    }
+  );
+});
+
+// submit internal ticket note
+app.put('/internal-notes/:id', (req, res) => {
+  const internalNote = req.body;
+  const ticketId = req.params.id;
+
+  connection.query(
+    'UPDATE ticket SET ? WHERE id = ?',
+    [internalNote, ticketId],
+    (err, results) => {
+      if (err) {
+        console.log(err);
+        res.status(500).send('An error occurred to post internal note');
+      } else {
+        console.log('internal note successfully added');
+        res.status(200).json(results);
+      }
+    }
+  );
+});
+// get internal note of one ticket
+app.get('/ticket/:id/internal-note/', (req, res) => {
+  const ticketId = req.params.id;
+  const internalNote = req.body;
+  connection.query(
+    `SELECT * FROM ticket WHERE id = ? AND internalNote IS NOT NULL`,
+    [ticketId, internalNote],
+    (err, results) => {
+      if (err) {
+        console.log(err);
+        res.status(500).send('An error occurred to display unassigned tickets');
+      } else {
         res.status(200).json(results);
       }
     }
