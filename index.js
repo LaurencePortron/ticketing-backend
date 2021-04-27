@@ -46,6 +46,8 @@ app.get('/', (req, res) => {
   res.send('Welcome to ticketing backend!');
 });
 
+// submit ticket: 1. add ticket into ticket table, 2. add customer_id from ticket table to customers table 3. add ticket to message table 4. update ticket_id in message table where messages are the same 5. update customer_id in message table where messages are the same
+
 app.post('/submit-form', (req, res) => {
   const { contact_reason, message, status, customer_email } = req.body;
 
@@ -67,16 +69,66 @@ app.post('/submit-form', (req, res) => {
           (err, results) => {
             if (err) {
               console.log(err);
-              res.status(500).send('An error occurred to add the customer id');
             } else {
               console.log('id successfully added to ticket');
-              res.status(200).json(results);
+              connection.query(
+                'INSERT INTO messages (message) VALUES (?)',
+                [message],
+                (err, results) => {
+                  if (err) {
+                    console.log(err);
+                    // res.status(500).send('An error occurred to post ticket');
+                  } else {
+                    // res.status(200).json(results);
+                    console.log('ticket posted');
+                    const messageCustomerId = req.params.customer_id;
+                    connection.query(
+                      'UPDATE messages m INNER JOIN ticket t ON t.id SET m.ticket_id = t.id WHERE m.message = t.message',
+                      [message, ticketCustomerId, messageCustomerId],
+                      (err, results) => {
+                        if (err) {
+                          console.log(err);
+                        } else {
+                          console.log('ticket_id added to messages');
+                          const messageCustomerId = req.params.customer_id;
+                          connection.query(
+                            'UPDATE messages m INNER JOIN ticket t ON t.customer_id SET m.customer_id = t.customer_id WHERE m.message = t.message',
+                            [message, ticketCustomerId, messageCustomerId],
+                            (err, results) => {
+                              if (err) {
+                                console.log(err);
+                              } else {
+                                console.log('customer_id added to messages');
+                                res.status(200).json(results);
+                              }
+                            }
+                          );
+                        }
+                      }
+                    );
+                  }
+                }
+              );
             }
           }
         );
       }
     }
   );
+});
+
+//get all messages
+
+app.get('/messages', (req, res) => {
+  const allMessages = req.body;
+  connection.query('SELECT * FROM messages', [allMessages], (err, results) => {
+    if (err) {
+      console.log(err);
+      res.status(500).send('An error occurred to display all messages');
+    } else {
+      res.status(200).json(results);
+    }
+  });
 });
 
 //get all customers
@@ -477,23 +529,6 @@ app.put('/internal-notes/:id', (req, res) => {
         res.status(500).send('An error occurred to post internal note');
       } else {
         console.log('internal note successfully added');
-        res.status(200).json(results);
-      }
-    }
-  );
-});
-// get internal note of one ticket
-app.get('/ticket/:id/internal-note/', (req, res) => {
-  const ticketId = req.params.id;
-  const internalNote = req.body;
-  connection.query(
-    `SELECT * FROM ticket WHERE id = ? AND internalNote IS NOT NULL`,
-    [ticketId, internalNote],
-    (err, results) => {
-      if (err) {
-        console.log(err);
-        res.status(500).send('An error occurred to display unassigned tickets');
-      } else {
         res.status(200).json(results);
       }
     }
