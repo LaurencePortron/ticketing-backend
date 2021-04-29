@@ -49,11 +49,17 @@ app.get('/', (req, res) => {
 // submit ticket: 1. add ticket into ticket table, 2. add customer_id from ticket table to customers table 3. add ticket to message table 4. update ticket_id in message table where messages are the same 5. update customer_id in message table where messages are the same
 
 app.post('/submit-form', (req, res) => {
-  const { contact_reason, message, status, customer_email } = req.body;
+  const {
+    contact_reason,
+    message,
+    status,
+    customer_email,
+    priority,
+  } = req.body;
 
   connection.query(
-    'INSERT INTO ticket(contact_reason, message, status, customer_email) VALUES (?, ?, ?, ?)',
-    [contact_reason, message, status, customer_email],
+    'INSERT INTO ticket(contact_reason, message, status, customer_email, priority) VALUES (?, ?, ?, ?,?)',
+    [contact_reason, message, status, customer_email, priority],
     (err, results) => {
       if (err) {
         console.log(err);
@@ -148,6 +154,8 @@ app.get('/customers', (req, res) => {
     }
   );
 });
+
+// get one customer
 
 app.get('/customers/:id', (req, res) => {
   const customerId = req.params.id;
@@ -344,6 +352,30 @@ app.put('/ticket/:id/status', (req, res) => {
           .status(500)
           .send('An error occurred to change the status of this ticket');
       } else {
+        res.status(200).json(results);
+      }
+    }
+  );
+});
+
+//get usernames of assignee_id from tickets
+
+//SELECT * FROM users u INNER JOIN ticket t ON t.assignee_id WHERE t.assignee_id = u.id;
+
+app.get('/username/:id', (req, res) => {
+  const users = req.body;
+  const ticketId = req.params.id;
+  connection.query(
+    'SELECT * FROM users u INNER JOIN ticket t ON t.assignee_id WHERE t.assignee_id = u.id AND t.id = ?',
+    [ticketId, users],
+    (err, results) => {
+      if (err) {
+        console.log(
+          'An error occurred to display usernames for ticket assignee_id',
+          err
+        );
+      } else {
+        console.log('results', results);
         res.status(200).json(results);
       }
     }
