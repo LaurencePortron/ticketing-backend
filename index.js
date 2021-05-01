@@ -271,14 +271,18 @@ app.post('/customers', (req, res) => {
 
 app.get('/tickets', (req, res) => {
   const allTickets = req.body;
-  connection.query('SELECT * FROM ticket', [allTickets], (err, results) => {
-    if (err) {
-      console.log(err);
-      res.status(500).send('An error occurred to display all tickets');
-    } else {
-      res.status(200).json(results);
+  connection.query(
+    'SELECT *  FROM ticket ORDER BY date DESC',
+    [allTickets],
+    (err, results) => {
+      if (err) {
+        console.log(err);
+        res.status(500).send('An error occurred to display all tickets');
+      } else {
+        res.status(200).json(results);
+      }
     }
-  });
+  );
 });
 
 // get one ticket with customer id
