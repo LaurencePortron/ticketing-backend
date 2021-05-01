@@ -13,6 +13,8 @@ app.use(
     extended: true,
   })
 );
+const sgMail = require('@sendgrid/mail');
+sgMail.setApiKey(process.env.SENDGRID_API_KEY);
 
 const allowedOrigins = [
   'http://localhost:3000',
@@ -58,7 +60,7 @@ app.post('/submit-form', (req, res) => {
   } = req.body;
 
   connection.query(
-    'INSERT INTO ticket(contact_reason, message, status, customer_email, priority) VALUES (?, ?, ?, ?,?)',
+    'INSERT INTO ticket(contact_reason, message, status, customer_email, priority) VALUES (?, ?, ?, ?, ?)',
     [contact_reason, message, status, customer_email, priority],
     (err, results) => {
       if (err) {
@@ -77,16 +79,15 @@ app.post('/submit-form', (req, res) => {
               console.log(err);
             } else {
               console.log('id successfully added to ticket');
+              const type = 'incoming';
               connection.query(
-                'INSERT INTO messages (message) VALUES (?)',
-                [message],
+                'INSERT INTO messages (message, type) VALUES (?, ?)',
+                [message, type],
                 (err, results) => {
                   if (err) {
                     console.log(err);
-                    // res.status(500).send('An error occurred to post ticket');
                   } else {
-                    // res.status(200).json(results);
-                    console.log('ticket posted');
+                    console.log('message created');
                     const messageCustomerId = req.params.customer_id;
                     connection.query(
                       'UPDATE messages m INNER JOIN ticket t ON t.id SET m.ticket_id = t.id WHERE m.message = t.message',
@@ -123,6 +124,28 @@ app.post('/submit-form', (req, res) => {
   );
 });
 
+// send reply to customer
+
+app.post('/send-reply/:id', (req, res) => {
+  const ticketId = req.params.id;
+  const reply = {
+    to: req.body.to,
+    from: 'TripperAppLauren@gmail.com',
+    subject: `Your response to your ticket: ${ticketId}`,
+    text: req.body.text,
+  };
+  sgMail
+    .send(reply)
+    .then(() => {
+      console.log('Email sent');
+      res.send({ ok: true });
+    })
+    .catch((error) => {
+      console.error('sth went wrong', error.response.body.errors);
+      res.status(500).send('bad gateway');
+    });
+});
+
 //get all messages
 
 app.get('/messages', (req, res) => {
@@ -135,6 +158,43 @@ app.get('/messages', (req, res) => {
       res.status(200).json(results);
     }
   });
+});
+
+// post a message (editor & internal note)
+
+app.post('/message', (req, res) => {
+  const { message, ticket_id, customer_id, type } = req.body;
+  connection.query(
+    'INSERT INTO messages (message, ticket_id, customer_id, type) VALUES (?, ?, ?, ?)',
+    [message, ticket_id, customer_id, type],
+    (err, results) => {
+      if (err) {
+        console.log(err);
+      } else {
+        res.status(200).json(results);
+      }
+    }
+  );
+});
+
+// messages of ticket
+
+app.get('/messages/:ticket_id/:customer_id', (req, res) => {
+  const ticket_id = req.params.ticket_id;
+  const customer_id = req.params.customer_id;
+
+  connection.query(
+    'SELECT * FROM messages WHERE ticket_id = ? AND customer_id = ?',
+    [ticket_id, customer_id],
+    (err, results) => {
+      if (err) {
+        console.log(err);
+        res.status(500).send('An error occurred to display this this message');
+      } else {
+        res.status(200).json(results);
+      }
+    }
+  );
 });
 
 //get all customers
@@ -541,26 +601,6 @@ app.get('/logged-user', (req, res) => {
         res.status(500).send('An error occurred to display the selected user');
       } else {
         console.log('results', results);
-        res.status(200).json(results);
-      }
-    }
-  );
-});
-
-// submit internal ticket note
-app.put('/internal-notes/:id', (req, res) => {
-  const internalNote = req.body;
-  const ticketId = req.params.id;
-
-  connection.query(
-    'UPDATE ticket SET ? WHERE id = ?',
-    [internalNote, ticketId],
-    (err, results) => {
-      if (err) {
-        console.log(err);
-        res.status(500).send('An error occurred to post internal note');
-      } else {
-        console.log('internal note successfully added');
         res.status(200).json(results);
       }
     }
