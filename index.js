@@ -219,7 +219,7 @@ app.get('/templates', (req, res) => {
   );
 });
 
-//post a macro
+//post a template
 
 app.post('/templates', (req, res) => {
   const { title, macro } = req.body;
@@ -229,6 +229,25 @@ app.post('/templates', (req, res) => {
     (err, results) => {
       if (err) {
         console.log(err);
+      } else {
+        res.status(200).json(results);
+      }
+    }
+  );
+});
+
+//modify template
+
+app.put('/template/:id', (req, res) => {
+  const macro = req.body;
+  const templateId = req.params.id;
+  connection.query(
+    'UPDATE templates SET ? WHERE id = ?',
+    [macro, templateId],
+    (err, results) => {
+      if (err) {
+        console.log(err);
+        res.status(500).send('An error occurred to change this template');
       } else {
         res.status(200).json(results);
       }
