@@ -130,7 +130,7 @@ app.post('/send-reply/:id', (req, res) => {
   const ticketId = req.params.id;
   const reply = {
     to: req.body.to,
-    from: 'TripperAppLauren@gmail.com',
+    from: 'lauren.ticketing@gmail.com',
     subject: `Your response to your ticket: ${ticketId}`,
     text: req.body.text,
   };
@@ -150,14 +150,18 @@ app.post('/send-reply/:id', (req, res) => {
 
 app.get('/messages', (req, res) => {
   const allMessages = req.body;
-  connection.query('SELECT * FROM messages', [allMessages], (err, results) => {
-    if (err) {
-      console.log(err);
-      res.status(500).send('An error occurred to display all messages');
-    } else {
-      res.status(200).json(results);
+  connection.query(
+    'SELECT * FROM messages ORDER BY date ASC',
+    [allMessages],
+    (err, results) => {
+      if (err) {
+        console.log(err);
+        res.status(500).send('An error occurred to display all messages');
+      } else {
+        res.status(200).json(results);
+      }
     }
-  });
+  );
 });
 
 // post a message (editor & internal note)
@@ -184,12 +188,47 @@ app.get('/messages/:ticket_id/:customer_id', (req, res) => {
   const customer_id = req.params.customer_id;
 
   connection.query(
-    'SELECT * FROM messages WHERE ticket_id = ? AND customer_id = ?',
+    'SELECT * FROM messages WHERE ticket_id = ? AND customer_id = ? ORDER BY date ASC',
     [ticket_id, customer_id],
     (err, results) => {
       if (err) {
         console.log(err);
         res.status(500).send('An error occurred to display this this message');
+      } else {
+        res.status(200).json(results);
+      }
+    }
+  );
+});
+
+//get all templates
+
+app.get('/templates', (req, res) => {
+  const { title, macro } = req.body;
+  connection.query(
+    'SELECT * FROM templates',
+    [title, macro],
+    (err, results) => {
+      if (err) {
+        console.log(err);
+        res.status(500).send('An error occurred to display templates');
+      } else {
+        res.status(200).json(results);
+      }
+    }
+  );
+});
+
+//post a macro
+
+app.post('/templates', (req, res) => {
+  const { title, macro } = req.body;
+  connection.query(
+    'INSERT INTO templates ( title, macro ) VALUES (?, ?)',
+    [title, macro],
+    (err, results) => {
+      if (err) {
+        console.log(err);
       } else {
         res.status(200).json(results);
       }
@@ -251,9 +290,7 @@ app.post('/customers', (req, res) => {
             (err, results) => {
               if (err) {
                 console.log(err);
-                // res.status(500).send('An error occurred to post ticket');
               } else {
-                // res.status(200).json(results);
                 console.log('ticket posted');
               }
             }
